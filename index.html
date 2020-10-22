@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Smart contracts</title>
+        <script src='./node_modules/web3/dist/web3.min.js'></script>
+    </head>
+    <body>
+        <div style="margin-top: 40vh; margin-left: 50vh">
+            <h1>Create your own token!</h1>
+            <span>Current name:</span>
+            <span style="color: purple" id="tokenName"></span>
+            <br>
+            <input id="newName" type="text">
+            <button id="sendButton">Update name</button>
+        </div>
+    </body>
+    <script>
+        const web3 = new Web3(window.ethereum);
+        window.ethereum.enable();
+        start();
+        async function start(){
+            const accounts = await web3.eth.getAccounts();
+            web3.eth.defaultAccount = accounts[0];
+
+            const tokenContract = new web3.eth.Contract([
+                {
+                    "inputs": [
+                        {
+                            "internalType": "string",
+                            "name": "_name",
+                            "type": "string"
+                        }
+                    ],
+                    "stateMutability": "nonpayable",
+                    "type": "constructor"
+                },
+                {
+                    "anonymous": false,
+                    "inputs": [
+                        {
+                            "indexed": false,
+                            "internalType": "string",
+                            "name": "name",
+                            "type": "string"
+                        }
+                    ],
+                    "name": "ChangedName",
+                    "type": "event"
+                },
+                {
+                    "inputs": [
+                        {
+                            "internalType": "string",
+                            "name": "_name",
+                            "type": "string"
+                        }
+                    ],
+                    "name": "setName",
+                    "outputs": [],
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                },
+                {
+                    "inputs": [],
+                    "name": "getName",
+                    "outputs": [
+                        {
+                            "internalType": "string",
+                            "name": "",
+                            "type": "string"
+                        }
+                    ],
+                    "stateMutability": "view",
+                    "type": "function"
+                }
+            ], '0x686A1E6d3B7C528FDda0050D1F50de97eF725150');
+            const tokenNameSpan = document.getElementById('tokenName');
+            const newNameInput = document.getElementById("newName");
+
+            document.getElementById("sendButton").addEventListener('click', async () => {
+                let newName = newNameInput.value;
+                await tokenContract.methods.setName(newName).send({from: accounts[0]});
+                newNameInput.value = "";
+            })
+
+            tokenNameSpan.textContent = await tokenContract.methods.getName().call();
+
+            const event = tokenContract.events.ChangedName()
+            event.on("data", event => tokenNameSpan.textContent = event.returnValues.name);
+        }
+    </script>
+</html>
